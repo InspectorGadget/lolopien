@@ -1,0 +1,274 @@
+### After step 14 (login), copy the access_token into @accessToken below.
+
+@baseUrl = http://localhost:8080
+@accessToken = eyJraWQiOiJUZTlqeVluQWtmXC9ETmFrSHpJc0RLWXlxVE5hOWVKMGY3cVwvekJXU2lhYW89IiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiI4OWRhMDViYy1jMGExLTcwNzAtZmIyMy1kMDdlYjk3ZTlhODUiLCJpc3MiOiJodHRwczpcL1wvY29nbml0by1pZHAuYXAtc291dGhlYXN0LTEuYW1hem9uYXdzLmNvbVwvYXAtc291dGhlYXN0LTFfM1VDcTBmM2Z2IiwiY2xpZW50X2lkIjoiNmNxZ25lbGJ0bW9uZmllcWJhZDl2OTI4bGgiLCJvcmlnaW5fanRpIjoiYmY3N2Y1YjUtZGJhZC00Y2Q1LWE5NjEtNzdmNmEwMDdjZmU4IiwiZXZlbnRfaWQiOiJlYzIyMTQ0Ni00ZjE1LTQ1OTMtYTNhZS03MWNhYThlMzljZGEiLCJ0b2tlbl91c2UiOiJhY2Nlc3MiLCJzY29wZSI6ImF3cy5jb2duaXRvLnNpZ25pbi51c2VyLmFkbWluIiwiYXV0aF90aW1lIjoxNzc3MjE5ODUwLCJleHAiOjE3NzcyMjM0NTAsImlhdCI6MTc3NzIxOTg1MCwianRpIjoiYjA5ZTViNzMtMjI3Yy00MTI5LTljNzItYzVkYjAyZmM4ZmYyIiwidXNlcm5hbWUiOiJ0ZXN0dXNlcjEyMyJ9.YE6yTqHj_NHmrtZQ2vDHMrOI9hReI6KOtFV213Gal9r9UahjUmCCNey1JcVL6znJ7I3Tvc9BITW802PzXOQgvDhN-zRde1GKadrGdxtNCNvNQcwBVkxy3wk_DsdiAWUZ5E4RnmAf3ymGArt9GaOGva9U_fGJXW30XaQWry1w0XEWnmCvgyFEPY1sx5qvhlOMkEpcUFZ0uhmPgmdlma4rY5-FOixLYDKhng6ZWhRj9i7uTw0c6yqGV_FGSG7S0Pv3_eWHLthx_0xFZfVFcpdFHp-OKSD3crcnPJuWjBgaJQxnubt1p7wpqJPJhul6TQhfKGcnvzzgX4pj8EpHt_mxvQ
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# HEALTH
+# ══════════════════════════════════════════════════════════════════════════════
+
+### 1. Ping — expect 200 {"message":"pong"}
+GET {{baseUrl}}/ping
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# REGISTER — happy path
+# ══════════════════════════════════════════════════════════════════════════════
+
+### 2. Register primary test user — expect 201
+POST {{baseUrl}}/register
+Content-Type: application/json
+
+{
+  "email": "testuser@example.com",
+  "username": "testuser123",
+  "password": "SecurePassword123!"
+}
+
+### 3. Register a second user — expect 201
+POST {{baseUrl}}/register
+Content-Type: application/json
+
+{
+  "email": "newuser@example.com",
+  "username": "newuser456",
+  "password": "AnotherSecure789!"
+}
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# REGISTER — validation errors (all expect 400)
+# ══════════════════════════════════════════════════════════════════════════════
+
+### 4. Missing email — expect 400
+POST {{baseUrl}}/register
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "SecurePassword123!"
+}
+
+### 5. Missing username — expect 400
+POST {{baseUrl}}/register
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "SecurePassword123!"
+}
+
+### 6. Missing password — expect 400
+POST {{baseUrl}}/register
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "username": "testuser"
+}
+
+### 7. Invalid email format — expect 400
+POST {{baseUrl}}/register
+Content-Type: application/json
+
+{
+  "email": "not-an-email",
+  "username": "testuser",
+  "password": "SecurePassword123!"
+}
+
+### 8. Username too short (< 3 chars) — expect 400
+POST {{baseUrl}}/register
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "username": "ab",
+  "password": "SecurePassword123!"
+}
+
+### 9. Password too short (< 8 chars) — expect 400
+POST {{baseUrl}}/register
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "username": "testuser",
+  "password": "Short1!"
+}
+
+### 10. Weak password — no uppercase — expect 400 from Cognito
+POST {{baseUrl}}/register
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "username": "weakpwtest1",
+  "password": "weakpassword123!"
+}
+
+### 11. Weak password — no special characters — expect 400 from Cognito
+POST {{baseUrl}}/register
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "username": "weakpwtest2",
+  "password": "WeakPassword123"
+}
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# REGISTER — conflict
+# ══════════════════════════════════════════════════════════════════════════════
+
+### 12. Duplicate username — expect 409 on second call
+POST {{baseUrl}}/register
+Content-Type: application/json
+
+{
+  "email": "duplicate@example.com",
+  "username": "testuser123",
+  "password": "SecurePassword123!"
+}
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# LOGIN — happy path
+# ══════════════════════════════════════════════════════════════════════════════
+
+### 13. Login — expect 200 with access_token, id_token, refresh_token
+# Copy the access_token from the response into @accessToken at the top of this file
+# @name login
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+  "username": "testuser123",
+  "password": "SecurePassword123!"
+}
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# LOGIN — error cases
+# ══════════════════════════════════════════════════════════════════════════════
+
+### 14. Wrong password — expect 401
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+  "username": "testuser123",
+  "password": "WrongPassword123!"
+}
+
+### 15. Non-existent user — expect 401
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+  "username": "doesnotexist",
+  "password": "SecurePassword123!"
+}
+
+### 16. Missing username — expect 400
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+  "password": "SecurePassword123!"
+}
+
+### 17. Missing password — expect 400
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+  "username": "testuser123"
+}
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# /v1/me — authenticated endpoint
+# Paste your access_token into @accessToken at the top before running these.
+# ══════════════════════════════════════════════════════════════════════════════
+
+### 18. GET /v1/me — valid token — expect 200 with user profile
+GET {{baseUrl}}/v1/me
+Authorization: Bearer {{accessToken}}
+
+### 19. GET /v1/me — no token — expect 401
+GET {{baseUrl}}/v1/me
+
+### 20. GET /v1/me — malformed token — expect 401
+GET {{baseUrl}}/v1/me
+Authorization: Bearer this.is.not.a.valid.jwt
+
+### 21. GET /v1/me — wrong scheme (Basic instead of Bearer) — expect 401
+GET {{baseUrl}}/v1/me
+Authorization: Basic dXNlcjpwYXNz
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# DEVICES
+# Requires:
+#   1. @accessToken set above (from step 13 login)
+#   2. A row in vpn_servers (see seed query below)
+#   3. KMS_KEY_ARN set in .env
+#
+# Seed a VPN server row in psql first:
+#   INSERT INTO vpn_servers (region, endpoint, public_key, subnet, ec2_instance_id, secret_arn)
+#   VALUES ('ap-southeast-1', '1.2.3.4:51820', 'PLACEHOLDER_SERVER_PUBKEY',
+#           '10.8.0.0/24', 'i-00000000000000000', 'arn:aws:secretsmanager:ap-southeast-1:000000000000:secret:placeholder');
+# ══════════════════════════════════════════════════════════════════════════════
+
+### 22. Register a device — expect 201 with config field containing .conf content
+POST {{baseUrl}}/v1/devices
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "My MacBook"
+}
+
+### 23. Register a second device — expect 201 with a different vpn_ip (.3)
+POST {{baseUrl}}/v1/devices
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "My iPhone"
+}
+
+### 24. Register device — missing name — expect 400
+POST {{baseUrl}}/v1/devices
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{}
+
+### 25. Register device — no token — expect 401
+POST {{baseUrl}}/v1/devices
+Content-Type: application/json
+
+{
+  "name": "Ghost Device"
+}
+
+### 26. List devices — expect 200 with array of 2 devices
+GET {{baseUrl}}/v1/devices
+Authorization: Bearer {{accessToken}}
+
+### 27. Download config for device — paste device_id from step 22 response
+# @name getConfig
+GET {{baseUrl}}/v1/vpn/config/a40342cb-219d-4a05-892c-3a2e3f965da2
+Authorization: Bearer {{accessToken}}
+
+### 28. Revoke a device — paste device_id from step 23 response
+DELETE {{baseUrl}}/v1/devices/a40342cb-219d-4a05-892c-3a2e3f965da2
+Authorization: Bearer {{accessToken}}
+
+### 29. List devices after revoke — expect 200 with 1 device remaining
+GET {{baseUrl}}/v1/devices
+Authorization: Bearer {{accessToken}}
